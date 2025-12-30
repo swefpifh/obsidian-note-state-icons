@@ -157,3 +157,11 @@ This project is intentionally permissive and open.
 
 Maintained by **Swef**.  
 Initial implementation generated with the assistance of AI and refined manually.
+
+## 🛠 Updates
+
+v0.1.1 - 2025/12/30
+| French and English supported
+
+v0.1.0 - 2025/12/29
+| State system for note title
