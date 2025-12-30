@@ -3,7 +3,7 @@
   "name": "Note State Icons",
   "version": "0.1.2",
   "minAppVersion": "1.0.0",
-  "description": "Add an icon status to the left of the note title via a context menu available by right-clicking with the mouse.",
+  "description": "Add a status icon to the left of a note's title.",
   "author": "swefpifh",
   "authorUrl": "",
   "isDesktopOnly": true,
