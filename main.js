@@ -8,11 +8,17 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
     // ===== I18N =====
     await this.loadI18n();
 
+    // ===== STATES (ORDRE LOGIQUE CONSERVÉ) =====
     this.states = {
-      "validated":    { icon: "✔", color: "#000000", labelKey: "state.validated" },
-      "refused":      { icon: "❌", color: "#000000", labelKey: "state.refused" },
-      "warning":      { icon: "⚠️", color: "#000000", labelKey: "state.warning" },
+      // --- Group 1 : Status ---
+      "validated":    { icon: "✔",  color: "#000000", labelKey: "state.validated" },
+      "refused":      { icon: "❌",  color: "#000000", labelKey: "state.refused" },
+      "warning":      { icon: "⚠️",  color: "#000000", labelKey: "state.warning" },
+      "in-progress":  { icon: "🚧",  color: "#000000", labelKey: "state.inprogress" },
+      "review":       { icon: "👁",  color: "#000000", labelKey: "state.review" },
+      "redflag":      { icon: "🚩",  color: "#000000", labelKey: "state.redflag" },
 
+      // --- Group 2 : Books ---
       "bookpiles":    { icon: "📚", color: "#000000", labelKey: "state.bookpiles" },
       "notebook":     { icon: "📔", color: "#000000", labelKey: "state.notebook" },
       "bookred":      { icon: "📕", color: "#000000", labelKey: "state.bookred" },
@@ -20,6 +26,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
       "bookgreen":    { icon: "📗", color: "#000000", labelKey: "state.bookgreen" },
       "bookblue":     { icon: "📘", color: "#000000", labelKey: "state.bookblue" },
 
+      // --- Group 3 : Squares ---
       "squarered":    { icon: "🟥", color: "#000000", labelKey: "state.squarered" },
       "squareorange": { icon: "🟧", color: "#000000", labelKey: "state.squareorange" },
       "squareyellow": { icon: "🟨", color: "#000000", labelKey: "state.squareyellow" },
@@ -28,10 +35,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
       "squarepurple": { icon: "🟪", color: "#000000", labelKey: "state.squarepurple" },
       "squareblack":  { icon: "⬛", color: "#000000", labelKey: "state.squareblack" },
 
-      "in-progress":  { icon: "🚧", color: "#000000", labelKey: "state.inprogress" },
-      "review":       { icon: "👁", color: "#000000", labelKey: "state.review" },
-      "redflag":      { icon: "🚩", color: "#000000", labelKey: "state.redflag" },
-
+      // --- Group 4 : Misc ---
       "frozen":       { icon: "❄️", color: "#000000", labelKey: "state.frozen" },
       "hot":          { icon: "🔥", color: "#000000", labelKey: "state.hot" },
       "explode":      { icon: "💥", color: "#000000", labelKey: "state.explode" },
@@ -44,7 +48,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
 
     this.stateMap = (await this.loadData()) || {};
 
-    // ===== Menu clic droit =====
+    // ===== CONTEXT MENU =====
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
         if (!file || file.extension !== "md") return;
@@ -69,23 +73,38 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
             });
         });
 
-        stateMenu.addSeparator?.();
+        stateMenu.addSeparator();
 
-        Object.entries(this.states).forEach(([stateId, state]) => {
-          stateMenu.addItem(sub => {
-            sub
-              .setTitle(`${state.icon} ${this.t(state.labelKey)}`)
-              .onClick(async () => {
-                this.stateMap[file.path] = stateId;
-                await this.saveData(this.stateMap);
-                this.refreshFileExplorer();
-              });
+        // ===== GROUPED STATES WITH SEPARATORS =====
+        const groups = [
+          ["validated","refused","warning","in-progress","review","redflag"],
+          ["bookpiles","notebook","bookred","bookorange","bookgreen","bookblue"],
+          ["squarered","squareorange","squareyellow","squaregreen","squareblue","squarepurple","squareblack"],
+          ["frozen","hot","explode","love","light","globe","sun","star"]
+        ];
+
+        groups.forEach((group, index) => {
+          if (index > 0) stateMenu.addSeparator();
+
+          group.forEach(stateId => {
+            const state = this.states[stateId];
+            if (!state) return;
+
+            stateMenu.addItem(sub => {
+              sub
+                .setTitle(`${state.icon} ${this.t(state.labelKey)}`)
+                .onClick(async () => {
+                  this.stateMap[file.path] = stateId;
+                  await this.saveData(this.stateMap);
+                  this.refreshFileExplorer();
+                });
+            });
           });
         });
       })
     );
 
-    // ===== Rafraîchissements =====
+    // ===== REFRESH =====
     this.registerEvent(
       this.app.workspace.on("layout-ready", () => this.refreshFileExplorer())
     );
@@ -117,14 +136,13 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
   // ===== I18N =====
   async loadI18n() {
     const lang = document.documentElement.lang?.startsWith("fr") ? "fr" : "en";
-    const path = `${this.manifest.dir}/i18n/${lang}.json`;
+    const basePath = `${this.manifest.dir}/i18n/`;
 
     try {
-      const res = await fetch(this.app.vault.adapter.getResourcePath(path));
+      const res = await fetch(this.app.vault.adapter.getResourcePath(`${basePath}${lang}.json`));
       this.i18n = await res.json();
     } catch {
-      const fallback = `${this.manifest.dir}/i18n/en.json`;
-      const res = await fetch(this.app.vault.adapter.getResourcePath(fallback));
+      const res = await fetch(this.app.vault.adapter.getResourcePath(`${basePath}en.json`));
       this.i18n = await res.json();
     }
   }
@@ -146,16 +164,13 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
 
         const stateId = this.stateMap[file.path];
         const state = this.states[stateId];
-        const el = item.el;
-        if (!el) return;
+        if (!state) return;
 
-        const title = el.querySelector(".tree-item-inner");
+        const title = item.el?.querySelector(".tree-item-inner");
         if (!title) return;
 
         const old = title.querySelector(".swef-state-icon");
         if (old) old.remove();
-
-        if (!state) return;
 
         const icon = document.createElement("span");
         icon.className = "swef-state-icon";
