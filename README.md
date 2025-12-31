@@ -70,7 +70,7 @@ Examples of available states include:
 - 🟪 Purple Square  
 - ⬛ Black Square  
 
-### Miscellaneous
+### Species
 - 🧝 Elf
 - 🧞 Djinn
 - 🧛 Vampire
