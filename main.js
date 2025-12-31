@@ -1,4 +1,4 @@
-const { Plugin } = require("obsidian");
+const { Plugin, TFolder } = require("obsidian");
 
 module.exports = class SwefNoteStateIconsPlugin extends Plugin {
 
@@ -8,7 +8,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
     // ===== I18N =====
     await this.loadI18n();
 
-    // ===== STATES (ORDRE LOGIQUE CONSERVÉ) =====
+    // ===== STATES =====
     this.states = {
       // --- Group 1 : Status ---
       "validated":    { icon: "✔",  color: "#000000", labelKey: "state.validated" },
@@ -35,12 +35,23 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
       "squarepurple": { icon: "🟪", color: "#000000", labelKey: "state.squarepurple" },
       "squareblack":  { icon: "⬛", color: "#000000", labelKey: "state.squareblack" },
 
-      // --- Group 4 : Misc ---
+	  // --- Group 4 : Species ---
+	  "elf":       	  { icon: "🧝", color: "#000000", labelKey: "state.elf" },
+	  "djinn":        { icon: "🧞", color: "#000000", labelKey: "state.djinn" },
+	  "vampire":      { icon: "🧛", color: "#000000", labelKey: "state.vampire" },
+	  "fairy":        { icon: "🧚", color: "#000000", labelKey: "state.fairy" },
+	  "magician":     { icon: "🧙", color: "#000000", labelKey: "state.magician" },
+	  "zombie":       { icon: "🧟‍♀️", color: "#000000", labelKey: "state.zombie" },
+      
+	  // --- Group 5 : Misc ---
       "frozen":       { icon: "❄️", color: "#000000", labelKey: "state.frozen" },
       "hot":          { icon: "🔥", color: "#000000", labelKey: "state.hot" },
       "explode":      { icon: "💥", color: "#000000", labelKey: "state.explode" },
       "love":         { icon: "❤️", color: "#000000", labelKey: "state.love" },
+      "arrow":        { icon: "🔰", color: "#000000", labelKey: "state.arrow" },
+      "medal":        { icon: "🎖️", color: "#000000", labelKey: "state.medal" },
       "light":        { icon: "💡", color: "#000000", labelKey: "state.light" },
+      "2swords":      { icon: "⚔️", color: "#000000", labelKey: "state.2swords" },
       "globe":        { icon: "🌐", color: "#000000", labelKey: "state.globe" },
       "sun":          { icon: "🔅", color: "#000000", labelKey: "state.sun" },
       "star":         { icon: "⭐", color: "#000000", labelKey: "state.star" }
@@ -48,43 +59,44 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
 
     this.stateMap = (await this.loadData()) || {};
 
-    // ===== CONTEXT MENU =====
+    // ===== CONTEXT MENU (NOTES + DOSSIERS) =====
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
-        if (!file || file.extension !== "md") return;
+        if (!file) return;
+
+        const isFolder = file instanceof TFolder;
+        const isMarkdown = file.extension === "md";
+        if (!isFolder && !isMarkdown) return;
 
         menu.addItem(item => {
           item.setTitle(this.t("menu.state")).setIcon("tag").setSubmenu();
         });
 
-        const stateMenu = menu.items[menu.items.length - 1].submenu;
+        const stateMenu = menu.items.at(-1).submenu;
 
-        // NONE / AUCUN
         stateMenu.addItem(sub => {
           sub
             .setTitle(this.t("menu.none"))
             .setIcon("x")
             .onClick(async () => {
-              if (this.stateMap[file.path]) {
-                delete this.stateMap[file.path];
-                await this.saveData(this.stateMap);
-              }
-              this.refreshFileExplorer();
+              delete this.stateMap[file.path];
+              await this.saveData(this.stateMap);
+              this.triggerFullRefresh();
             });
         });
 
         stateMenu.addSeparator();
 
-        // ===== GROUPED STATES WITH SEPARATORS =====
         const groups = [
           ["validated","refused","warning","in-progress","review","redflag"],
           ["bookpiles","notebook","bookred","bookorange","bookgreen","bookblue"],
           ["squarered","squareorange","squareyellow","squaregreen","squareblue","squarepurple","squareblack"],
-          ["frozen","hot","explode","love","light","globe","sun","star"]
+		  ["elf","djinn","vampire","fairy","magician","zombie"],
+          ["frozen","hot","explode","love","arrow","medal","light","2swords","globe","sun","star"]
         ];
 
-        groups.forEach((group, index) => {
-          if (index > 0) stateMenu.addSeparator();
+        groups.forEach((group, i) => {
+          if (i > 0) stateMenu.addSeparator();
 
           group.forEach(stateId => {
             const state = this.states[stateId];
@@ -96,7 +108,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
                 .onClick(async () => {
                   this.stateMap[file.path] = stateId;
                   await this.saveData(this.stateMap);
-                  this.refreshFileExplorer();
+                  this.triggerFullRefresh();
                 });
             });
           });
@@ -104,10 +116,9 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
       })
     );
 
-    // ===== REFRESH =====
-    this.registerEvent(
-      this.app.workspace.on("layout-ready", () => this.refreshFileExplorer())
-    );
+    // ===== EVENTS =====
+    this.registerEvent(this.app.workspace.on("layout-ready", () => this.triggerFullRefresh()));
+    this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.triggerFullRefresh()));
 
     this.registerEvent(
       this.app.vault.on("rename", async (file, oldPath) => {
@@ -116,34 +127,39 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
           delete this.stateMap[oldPath];
           await this.saveData(this.stateMap);
         }
-        this.refreshFileExplorer();
+        this.triggerFullRefresh();
       })
     );
 
     this.registerEvent(
       this.app.vault.on("delete", async (file) => {
-        if (this.stateMap[file.path]) {
-          delete this.stateMap[file.path];
-          await this.saveData(this.stateMap);
-        }
-        this.refreshFileExplorer();
+        delete this.stateMap[file.path];
+        await this.saveData(this.stateMap);
+        this.triggerFullRefresh();
       })
     );
 
-    setTimeout(() => this.refreshFileExplorer(), 1000);
+    this.triggerFullRefresh();
+  }
+
+  // ===== FULL REFRESH =====
+  triggerFullRefresh() {
+    [0, 300, 800, 1500, 3000].forEach(delay =>
+      setTimeout(() => this.refreshFileExplorer(), delay)
+    );
   }
 
   // ===== I18N =====
   async loadI18n() {
     const lang = document.documentElement.lang?.startsWith("fr") ? "fr" : "en";
-    const basePath = `${this.manifest.dir}/i18n/`;
+    const base = `${this.manifest.dir}/i18n/`;
 
     try {
-      const res = await fetch(this.app.vault.adapter.getResourcePath(`${basePath}${lang}.json`));
-      this.i18n = await res.json();
+      const r = await fetch(this.app.vault.adapter.getResourcePath(`${base}${lang}.json`));
+      this.i18n = await r.json();
     } catch {
-      const res = await fetch(this.app.vault.adapter.getResourcePath(`${basePath}en.json`));
-      this.i18n = await res.json();
+      const r = await fetch(this.app.vault.adapter.getResourcePath(`${base}en.json`));
+      this.i18n = await r.json();
     }
   }
 
@@ -151,6 +167,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
     return this.i18n?.[key] ?? key;
   }
 
+  // ===== FILE EXPLORER RENDER =====
   refreshFileExplorer() {
     const leaves = this.app.workspace.getLeavesOfType("file-explorer");
 
@@ -160,7 +177,7 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
 
       Object.values(view.fileItems).forEach(item => {
         const file = item.file;
-        if (!file || file.extension !== "md") return;
+        if (!file) return;
 
         const stateId = this.stateMap[file.path];
         const state = this.states[stateId];
@@ -169,13 +186,11 @@ module.exports = class SwefNoteStateIconsPlugin extends Plugin {
         const title = item.el?.querySelector(".tree-item-inner");
         if (!title) return;
 
-        const old = title.querySelector(".swef-state-icon");
-        if (old) old.remove();
+        title.querySelector(".swef-state-icon")?.remove();
 
         const icon = document.createElement("span");
         icon.className = "swef-state-icon";
         icon.textContent = state.icon;
-        icon.style.color = state.color;
         icon.style.marginRight = "6px";
         icon.style.fontWeight = "bold";
 

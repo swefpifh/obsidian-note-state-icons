@@ -5,6 +5,9 @@
   "state.validated": "Validé",
   "state.refused": "Refusé",
   "state.warning": "Avertissement",
+  "state.inprogress": "En cours",
+  "state.review": "À relire",
+  "state.redflag": "Drapeau rouge",
 
   "state.bookpiles": "Piles de livres",
   "state.notebook": "Carnet",
@@ -20,16 +23,22 @@
   "state.squareblue": "Carré bleu",
   "state.squarepurple": "Carré violet",
   "state.squareblack": "Carré noir",
-
-  "state.inprogress": "En cours",
-  "state.review": "À relire",
-  "state.redflag": "Drapeau rouge",
+  
+  "state.elf": "Elfe",
+  "state.djinn": "Djinn",
+  "state.vampire": "Vampire",
+  "state.fairy": "Fée",
+  "state.magician": "Magicien",
+  "state.zombie": "Zombie",
 
   "state.frozen": "Gelé",
   "state.hot": "Chaud",
   "state.explode": "Explosion",
   "state.love": "Amour",
+  "state.arrow": "Flèche",
+  "state.medal": "Médaille",
   "state.light": "Lumière",
+  "state.2swords": "2 épées",
   "state.globe": "Monde",
   "state.sun": "Soleil",
   "state.star": "Étoile"

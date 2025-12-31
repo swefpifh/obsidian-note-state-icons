@@ -5,6 +5,9 @@
   "state.validated": "Validated",
   "state.refused": "Refused",
   "state.warning": "Warning",
+  "state.inprogress": "In Progress",
+  "state.review": "Review",
+  "state.redflag": "Red Flag",
 
   "state.bookpiles": "Piles of books",
   "state.notebook": "Notebook",
@@ -20,16 +23,22 @@
   "state.squareblue": "Blue Square",
   "state.squarepurple": "Purple Square",
   "state.squareblack": "Black Square",
-
-  "state.inprogress": "In Progress",
-  "state.review": "Review",
-  "state.redflag": "Red Flag",
+  
+  "state.elf": "Elf",
+  "state.djinn": "Djinn",
+  "state.vampire": "Vampire",
+  "state.fairy": "Fairy",
+  "state.magician": "Magician",
+  "state.zombie": "Zombie",
 
   "state.frozen": "Frozen",
   "state.hot": "Hot",
   "state.explode": "Explode",
   "state.love": "Love",
+  "state.arrow": "Arrow",
+  "state.medal": "Medal",
   "state.light": "Light",
+  "state.2swords": "2 Swords",
   "state.globe": "Globe",
   "state.sun": "Sun",
   "state.star": "Star"
