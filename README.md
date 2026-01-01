@@ -31,10 +31,6 @@ All states are stored internally and restored automatically when Obsidian is res
 
 ![](preview.png)
 
-<p align="center">
-  <img src="https://i.imgur.com/n0zBb7j.png" alt="How it works" width="600">
-</p>
-
 ---
 
 ## 🗂 Available States (default)
