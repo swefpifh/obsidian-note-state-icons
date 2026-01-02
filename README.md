@@ -164,8 +164,7 @@ This project is intentionally permissive and open.
 
 ## ✍️ Author
 
-Maintained by **Swef**.  
-Initial implementation generated with the assistance of AI and refined manually.
+Initial implementation generated with the assistance of AI and refined manually. Maintained by **swefpifh**.  
 
 ---
 
